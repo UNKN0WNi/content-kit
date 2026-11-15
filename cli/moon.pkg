@@ -1,0 +1,6 @@
+import {
+  "contentkit/extract",
+  "moonbitlang/core/env",
+}
+
+pkgtype(kind: "executable")

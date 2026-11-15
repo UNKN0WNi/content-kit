@@ -1,0 +1,18 @@
+import {
+  "contentkit/extract",
+}
+
+options(
+  link: {
+    "js": {
+      "format": "esm",
+      "exports": [
+        "extractJson",
+        "extractText",
+        "extractMd",
+        "rulesVersion",
+        "goldenBundle",
+      ],
+    },
+  },
+)

@@ -1,0 +1,10 @@
+# 本项目用「逐字节一致」做跨后端回归，Golden 快照与源码在任何平台都必须是 LF。
+# 否则 Windows 上 core.autocrlf=true 会把 testdata/expected/bundle.txt 转成 CRLF，
+# 导致 golden.sh / consistency.sh 误报差异。
+* text=auto eol=lf
+
+# 二进制资源不做换行转换
+*.wasm binary
+*.png binary
+*.jpg binary
+*.pdf binary

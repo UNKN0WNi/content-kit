@@ -1,0 +1,5 @@
+import {
+  "contentkit/extract",
+}
+
+pkgtype(kind: "executable")

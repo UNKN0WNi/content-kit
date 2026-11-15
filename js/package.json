@@ -1,0 +1,43 @@
+{
+  "name": "content-kit",
+  "version": "0.1.0",
+  "description": "Cross-backend content extraction kernel written in MoonBit",
+  "type": "module",
+  "main": "./dist/contentkit.js",
+  "module": "./dist/contentkit.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./dist/contentkit.js"
+    }
+  },
+  "files": [
+    "dist",
+    "index.d.ts",
+    "README.md"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UNKN0WNi/content-kit.git"
+  },
+  "homepage": "https://github.com/UNKN0WNi/content-kit#readme",
+  "bugs": {
+    "url": "https://github.com/UNKN0WNi/content-kit/issues"
+  },
+  "keywords": [
+    "readability",
+    "html",
+    "content-extraction",
+    "wasm",
+    "moonbit"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "bash ../scripts/package-npm.sh",
+    "test": "node ./test/smoke.mjs"
+  }
+}

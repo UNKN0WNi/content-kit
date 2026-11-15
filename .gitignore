@@ -1,0 +1,21 @@
+# 构建产物 / 中间文件
+_build/
+target/
+.consistency/
+js/dist/
+*.mi
+*.ast
+pkg.generated.mbti
+.DS_Store
+__pycache__/
+*.pyc
+
+# 真实网页抓取与抽取产物：本地生成，不入库（含第三方站点版权内容）
+# 生成方式见 docs/real-world-testing.md
+examples/page.*
+examples/page-*.json
+examples/sina.*
+examples/sina-*
+examples/demo.html
+examples/contentkit.js
+docs/realworld-demo.html

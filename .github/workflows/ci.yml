@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install MoonBit toolchain
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Format check + four-backend typecheck
+        run: |
+          moon fmt --check
+          moon check --target all
+
+      - name: Unit / integration / property tests (four backends)
+        run: |
+          moon test --target js
+          moon test --target wasm
+          moon test --target wasm-gc
+          moon test --target native
+
+      - name: Build all four backends
+        run: |
+          moon build --target js
+          moon build --target wasm
+          moon build --target wasm-gc
+          moon build --target native
+
+      - name: Cross-backend byte-for-byte consistency
+        run: bash scripts/consistency.sh
+
+      - name: Golden Vector regression
+        run: bash scripts/golden.sh
+
+      - name: npm package smoke test
+        run: bash scripts/package-npm.sh

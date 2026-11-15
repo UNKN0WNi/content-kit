@@ -1,0 +1,7 @@
+content-kit
+Copyright 2026 content-kit contributors
+
+本项目的抽取算法思想参考 Mozilla Readability（Apache-2.0），
+但未复制其源码；规则表、打分模型、解析器与序列化器均为本项目自研实现。
+
+运行时依赖仅为随 MoonBit 工具链分发的 moonbitlang/core（Apache-2.0）。

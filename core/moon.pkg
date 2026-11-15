@@ -1,0 +1,2 @@
+// core/：100% 后端无关的领域模型、规则表与纯函数。
+// 故意不声明任何外部 import，也不设 supported_targets 限制（ADR-2）。

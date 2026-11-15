@@ -1,0 +1,10 @@
+import {
+  "contentkit/core",
+  "contentkit/parse/html",
+  "contentkit/parse/plain",
+  "contentkit/testdata",
+}
+
+import {
+  "moonbitlang/core/quickcheck",
+} for "wbtest"
