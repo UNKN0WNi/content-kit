@@ -5,7 +5,7 @@
 数据来源，全部为仓库内的真实产物，不写死任何期望值：
   - testdata/expected/bundle.txt        14 篇语料、三输出、blocks、score
   - testdata/corpus.mbt                 news-cn 输入 HTML
-  - *_wbtest.mbt / *_test.mbt          67 个真实测试用例名
+  - *_wbtest.mbt / *_test.mbt          真实测试用例名
   - extract/extract_wbtest.mbt          news-cn 端到端断言
   - .consistency/*.txt                  六份一致性输出的 sha256 / 字节数
                                        （先跑 `bash scripts/consistency.sh`）
@@ -63,7 +63,7 @@ for line in corpus[start:end].splitlines():
         html_lines.append(stripped[2:].lstrip(" "))
 input_html = "\n".join(html_lines).rstrip()
 
-# 67 个真实测试用例名（按包分组）
+# 真实测试用例名（按包分组）
 test_files = sorted(
     p
     for p in ROOT.glob("**/*.mbt")

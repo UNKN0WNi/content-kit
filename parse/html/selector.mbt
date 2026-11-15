@@ -64,7 +64,7 @@ fn parse_simple(token : String) -> Simple {
     }
     return Attr(@core.ascii_lower(@core.normalize_ws(inner)))
   }
-  let not_pos = find_not_marker(@core.ascii_lower(token), 0)
+  let not_pos = @core.index_of_sub(@core.ascii_lower(token), ":not(", 0)
   if not_pos >= 0 && @core.ends_with_sub(token, ")") {
     let inner = token[not_pos + 5:token.length() - 1].to_owned()
     let neg = Neg(parse_simple(inner))
@@ -75,31 +75,6 @@ fn parse_simple(token : String) -> Simple {
     return And(parse_simple(head), neg)
   }
   Tag(@core.ascii_lower(token))
-}
-
-///|
-fn find_not_marker(s : String, from : Int32) -> Int32 {
-  let pat = ":not("
-  let a = s.to_array()
-  let p = pat.to_array()
-  if p.length() == 0 || p.length() > a.length() {
-    return -1
-  }
-  let mut i = if from < 0 { 0 } else { from }
-  while i + p.length() <= a.length() {
-    let mut ok = true
-    for j = 0; j < p.length(); j = j + 1 {
-      if a[i + j] != p[j] {
-        ok = false
-        break
-      }
-    }
-    if ok {
-      return i
-    }
-    i += 1
-  }
-  -1
 }
 
 ///|

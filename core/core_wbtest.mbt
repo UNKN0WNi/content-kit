@@ -29,6 +29,10 @@ test "decode_entities numeric" {
   assert_eq(decode_entities("&#65;&#66;&#67;"), "ABC")
   assert_eq(decode_entities("&#x26; &#39;"), "& '")
   assert_eq(decode_entities("&#0;"), "")
+  assert_eq(
+    decode_entities("&#:; &#x?; &#-1; &#xG0;"),
+    "&#:; &#x?; &#-1; &#xG0;",
+  )
 }
 
 ///|
@@ -199,6 +203,21 @@ test "metadata fallbacks and title cleanup" {
   let empty = resolve(empty_meta_fields(), 160)
   assert_eq(empty.title, "")
   assert_eq(empty.excerpt, None)
+}
+
+///|
+test "structured titles keep separators" {
+  let f = {
+    ..empty_meta_fields(),
+    jsonld_headline: Some("JSON-LD 标题 - 保留"),
+    og_title: Some("OG 标题 | 保留"),
+    html_title: Some("HTML 标题 - 站点名"),
+  }
+  assert_eq(resolve(f, 160).title, "JSON-LD 标题 - 保留")
+  let og_only = { ..empty_meta_fields(), og_title: Some("OG 标题 | 保留"), }
+  assert_eq(resolve(og_only, 160).title, "OG 标题 | 保留")
+  let h1_only = { ..empty_meta_fields(), first_h1: Some("H1 标题 - 保留"), }
+  assert_eq(resolve(h1_only, 160).title, "H1 标题 - 保留")
 }
 
 ///|

@@ -124,14 +124,10 @@ let positive_id_tokens : Array[String] = [
 let positive_role_values : Array[String] = ["article", "main", "articlebody"]
 
 ///|
-fn eq_lower(a : String, b : String) -> Bool {
-  ascii_lower(a) == ascii_lower(b)
-}
-
-///|
 fn in_list(list : Array[String], key : String) -> Bool {
+  let low = ascii_lower(key)
   for item in list {
-    if eq_lower(item, key) {
+    if item == low {
       return true
     }
   }
@@ -166,8 +162,9 @@ pub fn is_implicit_close(tag : String) -> Bool {
 ///|
 /// 标签基础权重。
 pub fn base_weight(tag : String) -> Double {
+  let low = ascii_lower(tag)
   for (name, weight) in tag_weights_table {
-    if eq_lower(name, tag) {
+    if name == low {
       return weight
     }
   }

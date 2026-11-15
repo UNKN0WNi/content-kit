@@ -13,7 +13,7 @@ Turn any web page into **clean body text + structured data**. The extraction alg
 The toolchain is portable and needs no installation: scripts automatically add `.tools/moonbit` to `PATH` and set `MOON_HOME`. If `moon` is already installed system-wide, that one is used.
 
 ```bash
-bash scripts/test-all.sh       # format check + four-backend check + 67 cases x 3 backends
+bash scripts/test-all.sh       # format check + four-backend check + 76 cases x 3 backends
 bash scripts/consistency.sh    # byte-for-byte comparison of 6 outputs
 bash scripts/package-npm.sh    # build the npm package and run the Node smoke test
 ```
@@ -67,7 +67,7 @@ Metadata precedence, the scoring formula and the rule table live in `core/metada
 - `core/` / `parse/` / `extract/` have no `targets` restriction: all four backends compile the same source; `core/` has zero backend dependencies.
 - No runtime `Json` value: field order is fixed, floats are emitted as fixed 4-decimal values via integer arithmetic, and string escaping has one implementation.
 - All three views are rendered from the same `Article.blocks`; the rule table ships with the version and exposes `rules_version`.
-- Measured: all 6 outputs are 23,757 B and byte-identical; 67/67 tests pass on `js`, `wasm` and `wasm-gc`.
+- Measured: all 6 outputs are 24,161 B and byte-identical; 76/76 tests pass on `js`, `wasm` and `wasm-gc`.
 
 ## Tests & demos
 

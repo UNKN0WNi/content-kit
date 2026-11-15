@@ -135,7 +135,7 @@ pub fn parse(html : String) -> Dom {
   let n = cs.length()
   let nodes : Array[Node] = []
   nodes.push(make_node(Element("#document"), [], -1, 0))
-  let mut stack : Array[Int32] = [0]
+  let stack : Array[Int32] = [0]
   let mut order = 1
   let mut i = 0
   while i < n {
@@ -179,8 +179,8 @@ pub fn parse(html : String) -> Dom {
           }
           k -= 1
         }
-        if found > 0 {
-          stack = stack[:found].to_owned()
+        while found > 0 && stack.length() > found {
+          let _ = stack.pop()
         }
       } else if i + 1 < n &&
         (@core.is_whitespace(cs[i + 1]) || cs[i + 1] == '>') {
@@ -273,7 +273,7 @@ pub fn parse(html : String) -> Dom {
           if @core.is_implicit_close(tag_name) && stack.length() > 1 {
             let top = stack[stack.length() - 1]
             if tag_of(nodes[top].kind) == tag_name {
-              stack = stack[:stack.length() - 1].to_owned()
+              let _ = stack.pop()
             }
           }
           let parent = stack[stack.length() - 1]
@@ -292,9 +292,6 @@ pub fn parse(html : String) -> Dom {
             order += 1
             nodes[idx].children.push(tidx)
             i = next
-            if stack.length() > 1 {
-              stack = stack[:stack.length() - 1].to_owned()
-            }
           } else if !self_closing && !@core.is_void_tag(tag_name) {
             stack.push(idx)
           }
@@ -329,21 +326,33 @@ fn collect_text(dom : Dom, idx : Int32, b : StringBuilder) -> Unit {
   if idx < 0 || idx >= dom.nodes.length() {
     return
   }
-  let node = dom.nodes[idx]
-  match node.kind {
-    Text(t) => b.write_string(t)
-    Comment => ()
-    Element(name) =>
-      if @core.is_dropped_tag(name) {
-        ()
-      } else {
-        for child in node.children {
-          collect_text(dom, child, b)
+  let stack : Array[(Int32, Bool)] = [(idx, false)]
+  while stack.length() > 0 {
+    let (cur, visited) = stack[stack.length() - 1]
+    let _ = stack.pop()
+    if cur < 0 || cur >= dom.nodes.length() {
+      continue
+    }
+    let node = dom.nodes[cur]
+    match node.kind {
+      Text(t) => if !visited { b.write_string(t) }
+      Comment => ()
+      Element(name) =>
+        if @core.is_dropped_tag(name) {
+          ()
+        } else if visited {
+          if name == "br" || name == "p" || name == "div" || name == "li" {
+            b.write_char(' ')
+          }
+        } else {
+          stack.push((cur, true))
+          let mut k = node.children.length() - 1
+          while k >= 0 {
+            stack.push((node.children[k], false))
+            k -= 1
+          }
         }
-        if name == "br" || name == "p" || name == "div" || name == "li" {
-          b.write_char(' ')
-        }
-      }
+    }
   }
 }
 
@@ -359,31 +368,36 @@ fn collect_link_text(dom : Dom, idx : Int32, b : StringBuilder) -> Unit {
   if idx < 0 || idx >= dom.nodes.length() {
     return
   }
-  let node = dom.nodes[idx]
-  match node.kind {
-    Text(t) => {
-      let mut cur = idx
-      let mut inside_a = false
-      while cur >= 0 {
-        if tag_of(dom.nodes[cur].kind) == "a" {
-          inside_a = true
-          break
-        }
-        cur = dom.nodes[cur].parent
-      }
-      if inside_a {
-        b.write_string(t)
-      }
+  let mut root = idx
+  let mut root_inside_a = false
+  while root >= 0 {
+    if tag_of(dom.nodes[root].kind) == "a" {
+      root_inside_a = true
+      break
     }
-    Comment => ()
-    Element(name) =>
-      if @core.is_dropped_tag(name) {
-        ()
-      } else {
-        for child in node.children {
-          collect_link_text(dom, child, b)
+    root = parent(dom, root)
+  }
+  let stack : Array[(Int32, Bool)] = [(idx, root_inside_a)]
+  while stack.length() > 0 {
+    let (cur, inside_a) = stack[stack.length() - 1]
+    let _ = stack.pop()
+    if cur < 0 || cur >= dom.nodes.length() {
+      continue
+    }
+    let node = dom.nodes[cur]
+    match node.kind {
+      Text(t) => if inside_a { b.write_string(t) }
+      Comment => ()
+      Element(name) =>
+        if !@core.is_dropped_tag(name) {
+          let child_inside_a = inside_a || name == "a"
+          let mut k = node.children.length() - 1
+          while k >= 0 {
+            stack.push((node.children[k], child_inside_a))
+            k -= 1
+          }
         }
-      }
+    }
   }
 }
 
@@ -414,10 +428,15 @@ pub fn descendant_count(dom : Dom, idx : Int32) -> Int32 {
     return 0
   }
   let mut count = 0
-  for child in dom.nodes[idx].children {
-    if is_element(dom, child) {
+  let stack = dom.nodes[idx].children.copy()
+  while stack.length() > 0 {
+    let cur = stack[stack.length() - 1]
+    let _ = stack.pop()
+    if is_element(dom, cur) {
       count += 1
-      count += descendant_count(dom, child)
+      for child in dom.nodes[cur].children {
+        stack.push(child)
+      }
     }
   }
   count
@@ -430,10 +449,10 @@ pub fn preorder(dom : Dom, start : Int32) -> Array[Int32] {
   if start < 0 || start >= dom.nodes.length() {
     return out
   }
-  let mut stack : Array[Int32] = [start]
+  let stack : Array[Int32] = [start]
   while stack.length() > 0 {
     let idx = stack[stack.length() - 1]
-    stack = stack[:stack.length() - 1].to_owned()
+    let _ = stack.pop()
     out.push(idx)
     let children = dom.nodes[idx].children
     let mut k = children.length() - 1

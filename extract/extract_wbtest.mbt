@@ -116,6 +116,19 @@ test "L2 three outputs share one block sequence" {
 }
 
 ///|
+test "L2 excerpt skips heading and uses first paragraph" {
+  let a = extract(
+    "<article><h1>这是标题，不是摘要</h1><p>这是正文第一段，包含逗号，并且足够长以成为有效的摘要来源。</p><p>第二段。</p></article>",
+  )
+  assert_eq(
+    a.excerpt,
+    Some(
+      "这是正文第一段，包含逗号，并且足够长以成为有效的摘要来源。",
+    ),
+  )
+}
+
+///|
 test "L2 json field order is hardcoded" {
   let a = extract(
     "<article><p>一段足够长的正文内容，包含逗号与句号，用于验证序列化字段顺序。</p></article>",

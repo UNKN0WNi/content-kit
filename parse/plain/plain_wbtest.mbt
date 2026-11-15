@@ -47,6 +47,21 @@ test "plain unclosed code fence" {
 }
 
 ///|
+test "plain code fence keeps leading blank lines" {
+  let blocks = extract_plain("```\n\nline1\n\nline2\n```")
+  assert_eq(blocks.length(), 1)
+  match blocks[0] {
+    @core.Code(body) => assert_eq(body, "\nline1\n\nline2")
+    _ => assert_true(false)
+  }
+}
+
+///|
+test "plain blank-only code fence produces no block" {
+  assert_eq(extract_plain("```\n\n```").length(), 0)
+}
+
+///|
 test "looks_like_plain" {
   assert_eq(looks_like_plain("hello world"), true)
   assert_eq(looks_like_plain("<p>hello</p>"), false)

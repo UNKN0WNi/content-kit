@@ -2,28 +2,6 @@
 /// content-kit 门面 API。四个后端共享这一份实现。
 
 ///|
-fn first_block_text(blocks : Array[@core.Block]) -> String? {
-  for block in blocks {
-    let t = @core.block_text(block)
-    if t != "" {
-      return Some(t)
-    }
-  }
-  None
-}
-
-///|
-fn with_first_paragraph(
-  fields : @core.MetaFields,
-  blocks : Array[@core.Block],
-) -> @core.MetaFields {
-  match first_block_text(blocks) {
-    Some(t) => { ..fields, body_first_paragraph: Some(t), }
-    None => fields
-  }
-}
-
-///|
 fn build_article(
   blocks : Array[@core.Block],
   fields : @core.MetaFields,
@@ -33,14 +11,7 @@ fn build_article(
   let resolved = @core.resolve(fields, rules.excerpt_len)
   let text = render_text(blocks)
   let markdown = render_md(blocks)
-  let excerpt = match resolved.excerpt {
-    Some(e) => Some(e)
-    None =>
-      match first_block_text(blocks) {
-        Some(t) => Some(@core.truncate_chars(t, rules.excerpt_len))
-        None => None
-      }
-  }
+  let excerpt = resolved.excerpt
   {
     title: resolved.title,
     byline: resolved.byline,
@@ -64,7 +35,7 @@ pub fn extract(html : String) -> @core.Article {
   let extracted = @html.extract_html(html)
   build_article(
     extracted.blocks,
-    with_first_paragraph(extracted.meta, extracted.blocks),
+    @core.with_first_paragraph(extracted.meta, extracted.blocks),
     extracted.score,
   )
 }
@@ -73,7 +44,7 @@ pub fn extract(html : String) -> @core.Article {
 /// 纯文本 / 邮件正文兜底入口。
 pub fn extract_plain_text(text : String) -> @core.Article {
   let blocks = @plain.extract_plain(text)
-  let fields = with_first_paragraph(@core.empty_meta_fields(), blocks)
+  let fields = @core.with_first_paragraph(@core.empty_meta_fields(), blocks)
   build_article(blocks, fields, 0.0)
 }
 

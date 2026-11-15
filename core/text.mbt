@@ -2,32 +2,18 @@
 /// 文本归一化工具集。全部是纯函数，不依赖任何后端 API。
 
 ///|
-fn upper_letters() -> Array[Char] {
-  "ABCDEFGHIJKLMNOPQRSTUVWXYZ".to_array()
-}
-
-///|
-fn lower_letters() -> Array[Char] {
-  "abcdefghijklmnopqrstuvwxyz".to_array()
-}
-
-///|
-/// ASCII 小写化。用查表实现，避免依赖 locale 相关的 Unicode 大小写库。
+/// ASCII 小写化。只转换 ASCII 码点，不依赖 locale 相关的 Unicode 大小写库。
 pub fn ascii_lower(s : String) -> String {
-  let upper = upper_letters()
-  let lower = lower_letters()
   let b = StringBuilder()
   let cs = s.to_array()
-  for i = 0; i < cs.length(); i = i + 1 {
-    let c = cs[i]
-    let mut done = false
-    for j = 0; j < upper.length(); j = j + 1 {
-      if !done && upper[j] == c {
-        b.write_char(lower[j])
-        done = true
+  for c in cs {
+    let code = c.to_int()
+    if code >= 'A'.to_int() && code <= 'Z'.to_int() {
+      match (code + 32).to_char() {
+        Some(lower) => b.write_char(lower)
+        None => b.write_char(c)
       }
-    }
-    if !done {
+    } else {
       b.write_char(c)
     }
   }
@@ -73,8 +59,11 @@ fn parse_number(s : String, base : Int32) -> Int32? {
   }
   let mut value = 0
   for i = 0; i < cs.length(); i = i + 1 {
+    if !is_hex_digit(cs[i]) {
+      return None
+    }
     let d = digit_value(cs[i])
-    if d < 0 || d >= base || cs[i] == '-' {
+    if d >= base {
       return None
     }
     value = value * base + d
@@ -255,31 +244,7 @@ pub fn truncate_chars(s : String, limit : Int32) -> String {
 
 ///|
 pub fn contains_sub(haystack : String, needle : String) -> Bool {
-  let h = haystack.to_array()
-  let n = needle.to_array()
-  if n.length() == 0 {
-    return true
-  }
-  if n.length() > h.length() {
-    return false
-  }
-  let mut i = 0
-  while i + n.length() <= h.length() {
-    let mut ok = true
-    let mut j = 0
-    while j < n.length() {
-      if h[i + j] != n[j] {
-        ok = false
-        break
-      }
-      j += 1
-    }
-    if ok {
-      return true
-    }
-    i += 1
-  }
-  false
+  index_of_sub(haystack, needle, 0) >= 0
 }
 
 ///|

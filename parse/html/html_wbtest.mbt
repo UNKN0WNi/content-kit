@@ -128,6 +128,13 @@ test "jsonld lookup string array and object" {
   assert_eq(jsonld_lookup(raw, "datePublished"), Some("2026-01-01"))
   assert_eq(jsonld_lookup(raw, "missing"), None)
   assert_eq(jsonld_lookup("not json", "headline"), None)
+  assert_eq(
+    jsonld_lookup(
+      "{\"headline\":\"\\u6807\\u9898 \\uD83D\\uDE00\"}", "headline",
+    ),
+    Some("标题 😀"),
+  )
+  assert_eq(jsonld_lookup("{\"headline\":\"\\uD800\"}", "headline"), None)
 }
 
 ///|
@@ -177,6 +184,61 @@ test "extract empty and no content" {
     "<html><head><title>x</title></head><body></body></html>",
   )
   assert_eq(b.blocks.length(), 0)
+}
+
+///|
+test "raw text elements keep their parent on the stack" {
+  let dom = parse(
+    "<article><script>var x = 1;</script><style>.x{}</style><p>REAL</p></article>",
+  )
+  let articles = query_all(dom, select("article"))
+  let paragraphs = query_all(dom, select("p"))
+  assert_eq(articles.length(), 1)
+  assert_eq(paragraphs.length(), 1)
+  assert_eq(parent(dom, paragraphs[0]), articles[0])
+  assert_eq(text_content(dom, articles[0]), "REAL")
+}
+
+///|
+test "consecutive block deduplication compares full content" {
+  let blocks : Array[@core.Block] = []
+  push_block(blocks, @core.Image("a.png", Some("A")))
+  push_block(blocks, @core.Image("a.png", Some("A")))
+  push_block(blocks, @core.Image("b.png", Some("B")))
+  assert_eq(blocks.length(), 2)
+  push_block(blocks, @core.Heading(1, "同名"))
+  push_block(blocks, @core.Heading(2, "同名"))
+  push_block(blocks, @core.Heading(2, "同名"))
+  assert_eq(blocks.length(), 4)
+}
+
+///|
+test "link text includes link ancestors above the traversal root" {
+  let dom = parse("<a href='#'><div><p>链接正文</p></div></a>")
+  let paragraphs = query_all(dom, select("p"))
+  assert_eq(paragraphs.length(), 1)
+  assert_eq(link_text_len(dom, paragraphs[0]), 4)
+}
+
+///|
+test "extract_html fills first paragraph metadata" {
+  let extracted = extract_html(
+    "<article><h1>标题</h1><p>这是正文第一段，包含足够的文字与逗号，应该成为摘要来源。</p></article>",
+  )
+  assert_eq(
+    extracted.meta.body_first_paragraph,
+    Some(
+      "这是正文第一段，包含足够的文字与逗号，应该成为摘要来源。",
+    ),
+  )
+}
+
+///|
+test "structural descendants are not content candidates" {
+  let html = "<nav><p>这是一段足够长的导航文案，包含逗号，但不应成为正文候选。</p></nav>"
+  let extracted = extract_html(html)
+  assert_eq(extracted.candidate_count, 0)
+  assert_eq(extracted.blocks.length(), 0)
 }
 
 ///|

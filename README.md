@@ -13,7 +13,7 @@
 工具链绿色免安装：脚本自动把 `.tools/moonbit` 加入 `PATH` 并设置 `MOON_HOME`；系统已装 `moon` 时直接用系统的。
 
 ```bash
-bash scripts/test-all.sh       # 格式检查 + 四后端 check + 67 用例 × 3 后端
+bash scripts/test-all.sh       # 格式检查 + 四后端 check + 76 用例 × 3 后端
 bash scripts/consistency.sh    # 6 份输出逐字节比对
 bash scripts/package-npm.sh    # 产出 npm 包并跑 Node 冒烟测试
 ```
@@ -67,7 +67,7 @@ Block = Paragraph | Heading(level,text) | ListItem | Quote | Code | Image(src,al
 - `core/` / `parse/` / `extract/` 无 `targets` 限制，四后端编译同一份源码；`core/` 零后端依赖。
 - 不用运行时 `Json`：字段顺序固定、浮点以整数运算输出 4 位小数、字符串转义统一实现。
 - 三种输出只从同一个 `Article.blocks` 渲染；规则表随版本走，对外暴露 `rules_version`。
-- 实测：6 份输出均 23,757 B 且逐字节相同；`js` / `wasm` / `wasm-gc` 各 67/67 用例通过。
+- 实测：6 份输出均 24,161 B 且逐字节相同；`js` / `wasm` / `wasm-gc` 各 76/76 用例通过。
 
 ## 测试与示范
 

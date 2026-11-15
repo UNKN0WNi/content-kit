@@ -47,27 +47,37 @@ fn raw_text(dom : Dom, idx : Int32) -> String {
 }
 
 ///|
-fn find_sub(s : String, pattern : String, from : Int32) -> Int32 {
-  let a = s.to_array()
-  let p = pattern.to_array()
-  if p.length() == 0 || p.length() > a.length() {
-    return -1
+fn json_hex4(cs : Array[Char], start : Int32) -> Int32? {
+  if start < 0 || start + 4 > cs.length() {
+    return None
   }
-  let mut i = if from < 0 { 0 } else { from }
-  while i + p.length() <= a.length() {
-    let mut ok = true
-    for j = 0; j < p.length(); j = j + 1 {
-      if a[i + j] != p[j] {
-        ok = false
-        break
-      }
+  let mut value = 0
+  for i = start; i < start + 4; i = i + 1 {
+    let c = cs[i]
+    if !@core.is_hex_digit(c) {
+      return None
     }
-    if ok {
-      return i
+    let d = if @core.is_ascii_digit(c) {
+      c.to_int() - '0'.to_int()
+    } else if c >= 'a' && c <= 'f' {
+      c.to_int() - 'a'.to_int() + 10
+    } else {
+      c.to_int() - 'A'.to_int() + 10
     }
-    i += 1
+    value = value * 16 + d
   }
-  -1
+  Some(value)
+}
+
+///|
+fn write_json_code_point(b : StringBuilder, code : Int32) -> Bool {
+  match code.to_char() {
+    Some(c) => {
+      b.write_char(c)
+      true
+    }
+    None => false
+  }
 }
 
 ///|
@@ -83,20 +93,55 @@ fn json_parse_string(raw : String, quote_pos : Int32) -> String? {
     if c == '"' {
       return Some(b.to_string())
     }
-    if c == '\\' && i + 1 < cs.length() {
-      let nxt = cs[i + 1]
-      match nxt {
-        'n' => b.write_char('\n')
-        'r' => b.write_char('\r')
-        't' => b.write_char('\t')
-        'b' => b.write_char('\u{0008}')
-        'f' => b.write_char('\u{000C}')
-        '/' => b.write_char('/')
-        '"' => b.write_char('"')
-        '\\' => b.write_char('\\')
-        _ => b.write_char(nxt)
+    if c == '\\' {
+      if i + 1 >= cs.length() {
+        return None
       }
-      i += 2
+      let nxt = cs[i + 1]
+      if nxt == 'u' {
+        let high = match json_hex4(cs, i + 2) {
+          Some(v) => v
+          None => return None
+        }
+        if high >= 0xD800 && high <= 0xDBFF {
+          if i + 12 > cs.length() || cs[i + 6] != '\\' || cs[i + 7] != 'u' {
+            return None
+          }
+          let low = match json_hex4(cs, i + 8) {
+            Some(v) => v
+            None => return None
+          }
+          if low < 0xDC00 || low > 0xDFFF {
+            return None
+          }
+          let code = 0x10000 + (high - 0xD800) * 0x400 + low - 0xDC00
+          if !write_json_code_point(b, code) {
+            return None
+          }
+          i += 12
+        } else {
+          if high >= 0xDC00 && high <= 0xDFFF {
+            return None
+          }
+          if !write_json_code_point(b, high) {
+            return None
+          }
+          i += 6
+        }
+      } else {
+        match nxt {
+          'n' => b.write_char('\n')
+          'r' => b.write_char('\r')
+          't' => b.write_char('\t')
+          'b' => b.write_char('\u{0008}')
+          'f' => b.write_char('\u{000C}')
+          '/' => b.write_char('/')
+          '"' => b.write_char('"')
+          '\\' => b.write_char('\\')
+          _ => return None
+        }
+        i += 2
+      }
     } else {
       b.write_char(c)
       i += 1
@@ -110,7 +155,7 @@ fn json_parse_string(raw : String, quote_pos : Int32) -> String? {
 /// 不引入完整 JSON 解析器，保证后端无关与实现可审计。
 pub fn jsonld_lookup(raw : String, key : String) -> String? {
   let pattern = "\"" + key + "\""
-  let key_pos = find_sub(raw, pattern, 0)
+  let key_pos = @core.index_of_sub(raw, pattern, 0)
   if key_pos < 0 {
     return None
   }
@@ -144,7 +189,7 @@ pub fn jsonld_lookup(raw : String, key : String) -> String? {
   }
   if cs[i] == '{' {
     let limit = if i + 400 < cs.length() { i + 400 } else { cs.length() }
-    let name_pos = find_sub(raw, "\"name\"", i)
+    let name_pos = @core.index_of_sub(raw, "\"name\"", i)
     if name_pos >= 0 && name_pos < limit {
       let mut j = name_pos + 6
       while j < cs.length() && @core.is_whitespace(cs[j]) {
@@ -167,7 +212,7 @@ pub fn jsonld_lookup(raw : String, key : String) -> String? {
 ///|
 fn host_of(url : String) -> String {
   let mut start = 0
-  let marker = find_sub(url, "://", 0)
+  let marker = @core.index_of_sub(url, "://", 0)
   if marker >= 0 {
     start = marker + 3
   }
@@ -391,18 +436,26 @@ fn make_block(name : String, node : Node, text : String) -> @core.Block {
 }
 
 ///|
+fn same_block(a : @core.Block, b : @core.Block) -> Bool {
+  match (a, b) {
+    (@core.Paragraph(x), @core.Paragraph(y)) => x == y
+    (@core.Heading(lx, x), @core.Heading(ly, y)) => lx == ly && x == y
+    (@core.ListItem(x), @core.ListItem(y)) => x == y
+    (@core.Quote(x), @core.Quote(y)) => x == y
+    (@core.Code(x), @core.Code(y)) => x == y
+    (@core.Image(sx, ax), @core.Image(sy, ay)) => sx == sy && ax == ay
+    _ => false
+  }
+}
+
+///|
 fn push_block(out : Array[@core.Block], block : @core.Block) -> Unit {
   // 去掉文档里常见的重复空块与连续重复块。
-  let text = @core.block_text(block)
-  if text == "" && !matches_image(block) {
+  if @core.block_text(block) == "" && !matches_image(block) {
     return
   }
-  if out.length() > 0 {
-    let last = out[out.length() - 1]
-    if @core.block_text(last) == text &&
-      @core.block_kind(last) == @core.block_kind(block) {
-      return
-    }
+  if out.length() > 0 && same_block(out[out.length() - 1], block) {
+    return
   }
   out.push(block)
 }
@@ -426,48 +479,69 @@ fn emit_blocks(
   if idx < 0 || idx >= dom.nodes.length() {
     return
   }
-  let name = tag(dom, idx)
-  if name == "" {
-    return
-  }
-  if @core.is_dropped_tag(name) || @core.is_structural_tag(name) {
-    return
-  }
-  if idx != region && scores[idx] < 0.0 {
-    return
-  }
-  let node = dom.nodes[idx]
-  if name == "img" {
-    let src = attr_or(node, "data-src", attr_or(node, "src", ""))
-    if src != "" {
-      push_block(out, make_block(name, node, ""))
+  let stack : Array[Int32] = [idx]
+  while stack.length() > 0 {
+    let cur = stack[stack.length() - 1]
+    let _ = stack.pop()
+    let name = tag(dom, cur)
+    if name == "" {
+      continue
     }
-    return
-  }
-  if is_leaf_block(name) {
-    let text = text_content(dom, idx)
-    if text != "" {
-      push_block(out, make_block(name, node, text))
+    if @core.is_dropped_tag(name) || @core.is_structural_tag(name) {
+      continue
     }
-    return
-  }
-  // 容器：先输出「直接挂在自己名下」的文本，再递归子元素。
-  let direct = StringBuilder()
-  for child in node.children {
-    match dom.nodes[child].kind {
-      Text(t) => direct.write_string(t)
-      _ => ()
+    if cur != region && scores[cur] < 0.0 {
+      continue
+    }
+    let node = dom.nodes[cur]
+    if name == "img" {
+      let src = attr_or(node, "data-src", attr_or(node, "src", ""))
+      if src != "" {
+        push_block(out, make_block(name, node, ""))
+      }
+      continue
+    }
+    if is_leaf_block(name) {
+      let text = text_content(dom, cur)
+      if text != "" {
+        push_block(out, make_block(name, node, text))
+      }
+      continue
+    }
+    // 容器：先输出「直接挂在自己名下」的文本，再按文档序处理子元素。
+    let direct = StringBuilder()
+    for child in node.children {
+      match dom.nodes[child].kind {
+        Text(t) => direct.write_string(t)
+        _ => ()
+      }
+    }
+    let direct_text = @core.normalize_ws(direct.to_string())
+    if direct_text != "" {
+      push_block(out, @core.Paragraph(direct_text))
+    }
+    let mut k = node.children.length() - 1
+    while k >= 0 {
+      let child = node.children[k]
+      if is_element(dom, child) {
+        stack.push(child)
+      }
+      k -= 1
     }
   }
-  let direct_text = @core.normalize_ws(direct.to_string())
-  if direct_text != "" {
-    push_block(out, @core.Paragraph(direct_text))
-  }
-  for child in node.children {
-    if is_element(dom, child) {
-      emit_blocks(dom, child, region, scores, out)
+}
+
+///|
+fn is_excluded_subtree(dom : Dom, idx : Int32) -> Bool {
+  let mut cur = idx
+  while cur > 0 && cur < dom.nodes.length() {
+    let name = tag(dom, cur)
+    if @core.is_dropped_tag(name) || @core.is_structural_tag(name) {
+      return true
     }
+    cur = parent(dom, cur)
   }
+  false
 }
 
 ///|
@@ -485,7 +559,7 @@ pub fn extract_html(html : String) -> Extracted {
   let mut best_score = 0.0
   for idx in nodes {
     let name = tag(dom, idx)
-    if @core.is_block_tag(name) && !@core.is_structural_tag(name) {
+    if @core.is_block_tag(name) && !is_excluded_subtree(dom, idx) {
       let f = features_of(dom, idx)
       if f.text_len >= rules.min_text_len {
         let s = @core.score(f, rules)
@@ -520,7 +594,7 @@ pub fn extract_html(html : String) -> Extracted {
   // 降级路径：没有候选块时，用文档里所有非空 <p> 兜底。
   if blocks.length() == 0 {
     for idx in nodes {
-      if tag(dom, idx) == "p" {
+      if tag(dom, idx) == "p" && !is_excluded_subtree(dom, idx) {
         let t = text_content(dom, idx)
         if t.to_array().length() >= rules.min_text_len {
           push_block(blocks, @core.Paragraph(t))
@@ -528,22 +602,9 @@ pub fn extract_html(html : String) -> Extracted {
       }
     }
   }
-  let mut meta = build_meta_fields(dom)
-  for block in blocks {
-    match meta.body_first_paragraph {
-      Some(_) => break
-      None =>
-        match block {
-          @core.Paragraph(t) =>
-            // MetaFields 的字段不可变，这里通过重建赋值。
-            meta = { ..meta, body_first_paragraph: Some(t), }
-          _ => ()
-        }
-    }
-  }
   {
     blocks,
-    meta,
+    meta: @core.with_first_paragraph(build_meta_fields(dom), blocks),
     score: if best_score > 0.0 {
       best_score
     } else {

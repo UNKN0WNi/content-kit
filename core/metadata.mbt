@@ -77,7 +77,14 @@ pub(all) struct ResolvedMeta {
 ///|
 fn non_empty(v : String?) -> String? {
   match v {
-    Some(s) => if normalize_ws(s) == "" { None } else { Some(normalize_ws(s)) }
+    Some(s) => {
+      let normalized = normalize_ws(s)
+      if normalized == "" {
+        None
+      } else {
+        Some(normalized)
+      }
+    }
     None => None
   }
 }
@@ -92,6 +99,32 @@ fn first_of(candidates : Array[String?]) -> String? {
     }
   }
   None
+}
+
+///|
+pub fn first_paragraph_text(blocks : Array[Block]) -> String? {
+  for block in blocks {
+    match block {
+      Paragraph(t) => if t != "" { return Some(t) }
+      _ => ()
+    }
+  }
+  None
+}
+
+///|
+pub fn with_first_paragraph(
+  fields : MetaFields,
+  blocks : Array[Block],
+) -> MetaFields {
+  match fields.body_first_paragraph {
+    Some(_) => fields
+    None =>
+      match first_paragraph_text(blocks) {
+        Some(t) => { ..fields, body_first_paragraph: Some(t), }
+        None => fields
+      }
+  }
 }
 
 ///|
@@ -148,16 +181,17 @@ fn split_at_last(s : String, sep : String) -> String? {
 ///|
 /// 按 §5.5.4 的优先级表解析所有字段。
 pub fn resolve(f : MetaFields, excerpt_len : Int32) -> ResolvedMeta {
-  let title_raw = first_of([
-    f.jsonld_headline,
-    f.og_title,
-    f.twitter_title,
-    f.html_title,
-    f.first_h1,
-  ])
-  let title = match title_raw {
-    Some(t) => clean_title(t)
-    None => ""
+  let title = match first_of([f.jsonld_headline, f.og_title, f.twitter_title]) {
+    Some(t) => t
+    None =>
+      match non_empty(f.html_title) {
+        Some(t) => clean_title(t)
+        None =>
+          match non_empty(f.first_h1) {
+            Some(t) => t
+            None => ""
+          }
+      }
   }
   let excerpt_raw = first_of([
     f.jsonld_description,
