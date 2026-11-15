@@ -31,15 +31,36 @@ You can also point at your own file: `bash examples/run.sh my.html`, `node examp
 
 ---
 
+## Windows / PowerShell
+
+On Windows, `bash` often resolves to `C:\Windows\System32\bash.exe` (the WSL launcher). Without an installed WSL distribution it fails with *"Windows Subsystem for Linux has no installed distributions"*. The repository scripts are bash scripts, so you need the **Bash shipped with Git for Windows**. Pick one:
+
+```powershell
+# ① Call Git Bash by its full path (simplest, verified)
+& "C:\Program Files\Git\bin\bash.exe" examples/run.sh --fetch "https://example.com/some-article"
+
+# ② Use the bundled PowerShell entry point: locates Git Bash and forwards arguments
+powershell -ExecutionPolicy Bypass -File examples/run.ps1 -Fetch "https://example.com/some-article"
+
+# ③ Permanent fix: point `bash` at Git Bash (write to your profile, reopen the terminal)
+New-Item -ItemType Directory -Force (Split-Path $PROFILE) | Out-Null
+Add-Content $PROFILE 'Set-Alias bash "C:\Program Files\Git\bin\bash.exe"'
+```
+
+After ③, the `bash examples/run.sh ...` commands above work verbatim. `run.ps1` also accepts `-Html my.html`, or forwards raw arguments such as `--fetch URL`. If Git for Windows is not installed, install it first: the scripts rely on `sha256sum`, `cmp`, `sed` and friends.
+
+---
+
 ## Scripts
 
 | File | Purpose |
 |---|---|
 | `run.sh` | One-command flow; `--fetch URL` grabs the rendered DOM via local Chrome/Edge, `--help` shows usage |
+| `run.ps1` | Windows PowerShell entry point; finds a real Git Bash and forwards arguments |
 | `demo.mjs` | Node / ESM demo; accepts an HTML path, `--clean` adds caller-side cleanup |
 | `../scripts/gen-realworld-demo.py` | Generates the `../docs/realworld-demo.html` visual page from local `page.*` artifacts |
 
-Prerequisites: `node >= 18`, Python 3, MoonBit toolchain (`scripts/moon.sh` finds the portable one automatically).
+Prerequisites: `node >= 18`, Python 3, MoonBit toolchain (`scripts/moon.sh` finds the portable one automatically); on Windows also Git for Windows (or any working Bash).
 
 ---
 

@@ -80,6 +80,8 @@ bash examples/run.sh
 node examples/demo.mjs examples/page.html --clean
 ```
 
+> Windows PowerShell: `bash` may resolve to the WSL launcher and fail with *"no installed distributions"*. Use `& "C:\Program Files\Git\bin\bash.exe" examples/run.sh ...` or `powershell -ExecutionPolicy Bypass -File examples/run.ps1 -Fetch <URL>`; see [examples/README.en.md](./examples/README.en.md).
+
 Real page snapshots are not committed; the scripts are generic and reproducible on any site. See the [quick-testing guide](./docs/real-world-testing.en.md) ([中文](./docs/real-world-testing.md)) and [examples/README.en.md](./examples/README.en.md) ([中文](./examples/README.md)).
 
 ## Layout

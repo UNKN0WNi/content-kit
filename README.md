@@ -80,6 +80,8 @@ bash examples/run.sh
 node examples/demo.mjs examples/page.html --clean
 ```
 
+> Windows PowerShell：`bash` 可能指向 WSL 启动器并报「没有已安装的分发」。改用 `& "C:\Program Files\Git\bin\bash.exe" examples/run.sh ...`，或 `powershell -ExecutionPolicy Bypass -File examples/run.ps1 -Fetch <URL>`，详见 [examples/README.md](./examples/README.md)。
+
 真实网页快照不入库，脚本通用，任意站点可复现。详见 [各环境快速测试指南](./docs/real-world-testing.md)（[English](./docs/real-world-testing.en.md)）与 [examples/README.md](./examples/README.md)（[English](./examples/README.en.md)）。
 
 ## 目录

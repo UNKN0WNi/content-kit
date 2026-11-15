@@ -38,6 +38,27 @@ Sizes    : text ... / md ... / json ...
 
 ---
 
+## 0.1 Windows / PowerShell
+
+On Windows, `bash` often resolves to `C:\Windows\System32\bash.exe` (the WSL launcher). Without an installed WSL distribution it fails with *"Windows Subsystem for Linux has no installed distributions"*. Use one of these entry points for every `bash ...` command in this guide:
+
+```powershell
+# ① Git Bash by full path (ships with Git for Windows)
+& "C:\Program Files\Git\bin\bash.exe" examples/run.sh --fetch "https://example.com/a"
+& "C:\Program Files\Git\bin\bash.exe" scripts/cxtract.sh examples/page.html --format json
+
+# ② PowerShell entry point (locates Git Bash and forwards arguments)
+powershell -ExecutionPolicy Bypass -File examples/run.ps1 -Fetch "https://example.com/a"
+
+# ③ Permanent fix: write to your profile; after reopening, every `bash ...` works verbatim
+New-Item -ItemType Directory -Force (Split-Path $PROFILE) | Out-Null
+Add-Content $PROFILE 'Set-Alias bash "C:\Program Files\Git\bin\bash.exe"'
+```
+
+`scripts/*.sh` rely on `sha256sum` / `cmp` / `sed` from Git Bash, and the bundled `.tools/moonbit` toolchain is the Windows build — Git Bash everywhere is the safest choice, even if a WSL distribution is installed. See "Windows / PowerShell" in [examples/README.en.md](../examples/README.en.md) for more.
+
+---
+
 ## 1. Prepare a real web page
 
 | Method | Command / action | Best for |
@@ -67,7 +88,7 @@ Three caveats:
 | 6 | **Browser (front-end only)** | See "Minimal browser snippet" below | Extraction inside a page, zero backend |
 | 7 | **Inside MoonBit source** | See "MoonBit snippet" below | Call `@extract` from `.mbt` / tests |
 | 8 | **WASI / moonrun** | `CONTENTKIT_INPUT="$(cat examples/page.html)" moon run --target wasm cli -- --env-input --format json` | wasm CLI without Node |
-| 9 | **native** | Install MSVC/gcc, then `moon run --target native cli -- --env-input --format json` | Unavailable without a host C compiler; see "Host limitation" in the main README |
+| 9 | **native** | Install MSVC/gcc, then `moon run --target native cli -- --env-input --format json` | Linking an executable requires a host C compiler; `moon check --target native` still passes without one |
 | 10 | **Smoke test without a page** | `bash scripts/cxtract.sh --list` / `--case news-cn --format md` | 14 built-in corpus cases verify the toolchain |
 
 ### Minimal browser snippet

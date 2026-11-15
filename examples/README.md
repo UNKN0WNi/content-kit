@@ -31,15 +31,36 @@ python -m json.tool examples/page.json | head -40
 
 ---
 
+## Windows / PowerShell
+
+在 Windows 上 `bash` 常指向 `C:\Windows\System32\bash.exe`（WSL 启动器）；未安装 WSL 发行版时会报「适用于 Linux 的 Windows 子系统没有已安装的分发」。仓库脚本是 bash 脚本，需要调用 **Git for Windows 自带的 Bash**，任选一种：
+
+```powershell
+# ① 直接写全路径（最省事，已实测）
+& "C:\Program Files\Git\bin\bash.exe" examples/run.sh --fetch "https://example.com/some-article"
+
+# ② 用仓库自带的 PowerShell 入口：自动定位 Git Bash 并转发参数
+powershell -ExecutionPolicy Bypass -File examples/run.ps1 -Fetch "https://example.com/some-article"
+
+# ③ 永久修复：把 `bash` 指向 Git Bash（写入配置文件，重开终端生效）
+New-Item -ItemType Directory -Force (Split-Path $PROFILE) | Out-Null
+Add-Content $PROFILE 'Set-Alias bash "C:\Program Files\Git\bin\bash.exe"'
+```
+
+③ 之后，上面「三步跑通」里的 `bash examples/run.sh ...` 就能原样使用。`run.ps1` 也接受 `-Html my.html`，或直接透传 `--fetch URL` 等参数。若本机没有 Git for Windows，请先安装：脚本依赖它提供的 `sha256sum`、`cmp`、`sed` 等工具。
+
+---
+
 ## 脚本
 
 | 文件 | 作用 |
 |---|---|
 | `run.sh` | 一键流程；`--fetch URL` 用本机 Chrome/Edge 抓渲染后 DOM，`--help` 看用法 |
+| `run.ps1` | Windows PowerShell 入口；定位真正的 Git Bash 并转发参数 |
 | `demo.mjs` | Node / ESM 使用示范；接受 HTML 路径，`--clean` 追加应用层清洗对比 |
 | `../scripts/gen-realworld-demo.py` | 从本地 `page.*` 产物生成 `../docs/realworld-demo.html` 可视化页面 |
 
-前置：`node >= 18`、Python 3、MoonBit 工具链（`scripts/moon.sh` 会自动找免安装版本）。
+前置：`node >= 18`、Python 3、MoonBit 工具链（`scripts/moon.sh` 会自动找免安装版本）；Windows 另需 Git for Windows 或任意可用 Bash。
 
 ---
 

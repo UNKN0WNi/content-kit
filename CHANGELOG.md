@@ -8,7 +8,8 @@
 
 - **可视化测试范例** `docs/test-visual.html`：单文件、零外部依赖、深浅色自适应的交互式测试报告。包含端到端断言逐步执行动画、三输出真实全文切换、六份输出 SHA-256 逐字节比对、67 个用例分布条形图、14 篇语料快照矩阵与复现命令。
 - `scripts/gen-test-visual.py`：从 `bundle.txt` / `corpus.mbt` / `*_wbtest.mbt` / `.consistency/*` 读取**真实实测数据**重新生成上述页面，不硬编码期望值。
-- `README.md` 新增「可视化测试范例」章节（Mermaid 链路图 + `L2 news-cn end to end` 真实断言 + 三输出实测 + 一致性结果 + 复现命令）。
+- `README.md` / `README.en.md` 精简为用法速查，保留可视化测试范例与真实网页示范的入口。
+- **Windows PowerShell 入口** `examples/run.ps1`：自动定位 Git for Windows 的 Bash 并转发参数，规避 `bash` 命中 WSL 启动器时报「没有已安装的分发」；中英文文档补 Windows / PowerShell 小节。
 - **真实网页快速测试** `examples/`：`run.sh` / `demo.mjs` 接受任意本地 HTML 或 `--fetch URL`，一键完成三后端 CLI 抽取（同 sha256、零差异）、Node ESM 三输出与应用层清洗；`scripts/gen-realworld-demo.py` 从本地产物生成交互式可视化页。抓取页面与产物由 `.gitignore` 排除，**不随公开仓库分发**。
 - `docs/real-world-testing.md` / `.en.md`：各环境（CLI 三后端 / Node ESM / 浏览器 / MoonBit 源码内 / WASI / native）用真实网页快速测试的中英双语指南，含页面准备、命令速查、效果评估与排错表。
 - **中英文可选 README**：`README.md`（简体中文）与 `README.en.md`（English）章节一一对应、顶部互链；`examples/README.md` / `.en.md` 同步双语。
@@ -18,6 +19,7 @@
 
 - 示例脚本通用化：不再绑定任何具体站点，输入统一为 `examples/page.html`（可指定路径），输出统一为 `examples/page.*`；可视化生成器改为读取本地产物、噪声规则改为可调整的调用方示例。
 - `STEPS.md` 去掉本机绝对路径；`.gitignore` 增加真实网页产物规则。
+- 主 README 移除计划书、实现步骤、验收记录、非目标与决策记录等计划类章节（各 378 行 → 91 行）；快速测试指南不再引用已删除的「宿主限制」章节。
 
 ## [0.1.0] - 2026-11-14
 

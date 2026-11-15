@@ -39,6 +39,27 @@ python -m json.tool examples/page.json | head -40   # 结构化结果
 
 ---
 
+## 0.1 Windows / PowerShell
+
+`bash` 在 Windows 上常指向 `C:\Windows\System32\bash.exe`（WSL 启动器），未装 WSL 发行版时会报「适用于 Linux 的 Windows 子系统没有已安装的分发」。本指南所有 `bash ...` 命令改用下面任一入口：
+
+```powershell
+# ① Git Bash 全路径（Git for Windows 自带）
+& "C:\Program Files\Git\bin\bash.exe" examples/run.sh --fetch "https://example.com/a"
+& "C:\Program Files\Git\bin\bash.exe" scripts/cxtract.sh examples/page.html --format json
+
+# ② PowerShell 入口（自动定位 Git Bash 并转发参数）
+powershell -ExecutionPolicy Bypass -File examples/run.ps1 -Fetch "https://example.com/a"
+
+# ③ 永久修复：写入配置文件，重开终端后本文所有 `bash ...` 原样可用
+New-Item -ItemType Directory -Force (Split-Path $PROFILE) | Out-Null
+Add-Content $PROFILE 'Set-Alias bash "C:\Program Files\Git\bin\bash.exe"'
+```
+
+`scripts/*.sh` 依赖 Git Bash 提供的 `sha256sum` / `cmp` / `sed`；仓库自带的 `.tools/moonbit` 是 Windows 版工具链，统一用 Git Bash 最稳妥（即便装了 WSL 发行版也不建议混用）。更多说明见 [examples/README.md](../examples/README.md) 的「Windows / PowerShell」。
+
+---
+
 ## 1. 准备一个真实网页
 
 | 方式 | 命令 / 操作 | 适用 |
@@ -68,7 +89,7 @@ python -m json.tool examples/page.json | head -40   # 结构化结果
 | 6 | **浏览器（纯前端）** | 见下方「浏览器最小片段」 | 零后端、页面内直接抽取 |
 | 7 | **MoonBit 源码内** | 见下方「MoonBit 片段」 | 在 `.mbt` / 测试里直接调 `@extract` |
 | 8 | **WASI / moonrun** | `CONTENTKIT_INPUT="$(cat examples/page.html)" moon run --target wasm cli -- --env-input --format json` | 不经过 Node，直接跑 wasm CLI |
-| 9 | **native 原生** | 先装 MSVC/gcc，再 `moon run --target native cli -- --env-input --format json` | 本机缺 C 编译器时不可用，详见主 README「宿主限制」 |
+| 9 | **native 原生** | 先装 MSVC/gcc，再 `moon run --target native cli -- --env-input --format json` | 链接可执行文件需要 C 编译器；缺编译器时 `moon check --target native` 仍可通过 |
 | 10 | **不依赖真实网页的冒烟** | `bash scripts/cxtract.sh --list` / `--case news-cn --format md` | 14 篇内置语料，验证环境是否正常 |
 
 ### 浏览器最小片段
