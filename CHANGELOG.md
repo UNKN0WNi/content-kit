@@ -8,6 +8,7 @@
 
 - **可视化测试范例** `docs/test-visual.html`：单文件、零外部依赖、深浅色自适应的交互式测试报告。包含端到端断言逐步执行动画、三输出真实全文切换、六份输出 SHA-256 逐字节比对、79 个用例分布条形图、14 篇语料快照矩阵与复现命令。
 - `scripts/gen-test-visual.py`：从 `bundle.txt` / `corpus.mbt` / `*_wbtest.mbt` / `.consistency/*` 读取**真实实测数据**重新生成上述页面，不硬编码期望值。
+- **README 重写**：按「定位 → 为什么 → 快速开始 → 用法 → 输出 → 架构 → 一致性 → API → 测试 → 目录 → 限制 → 文档 → 贡献」重排，补齐前置要求、真实输出样例、元数据优先级表、CLI / API 参考表与已知限制；中英文逐节对应（91 → 293 行）。
 - **Windows PowerShell 入口** `examples/run.ps1`：自动定位 Git for Windows 的 Bash 并转发参数，规避 `bash` 命中 WSL 启动器时报「没有已安装的分发」；中英文文档补 Windows / PowerShell 小节。
 - **真实网页快速测试** `examples/`：`run.sh` / `demo.mjs` 接受任意本地 HTML 或 `--fetch URL`，一键完成三后端 CLI 抽取（同 sha256、零差异）、Node ESM 三输出与应用层清洗；`scripts/gen-realworld-demo.py` 从本地产物生成交互式可视化页。抓取页面与产物由 `.gitignore` 排除，**不随公开仓库分发**。
 - `docs/real-world-testing.md` / `.en.md`：各环境（CLI 三后端 / Node ESM / 浏览器 / MoonBit 源码内 / WASI / native）用真实网页快速测试的中英双语指南，含页面准备、命令速查、效果评估与排错表。
