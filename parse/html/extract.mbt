@@ -502,7 +502,12 @@ fn emit_blocks(
       continue
     }
     if is_leaf_block(name) {
-      let text = text_content(dom, cur)
+      // 代码块保留换行与缩进，其他块折叠空白。
+      let text = if name == "pre" || name == "code" {
+        code_content(dom, cur)
+      } else {
+        text_content(dom, cur)
+      }
       if text != "" {
         push_block(out, make_block(name, node, text))
       }

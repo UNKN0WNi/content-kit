@@ -33,8 +33,7 @@ pub fn cases() -> Array[(String, String)] {
     #| <blockquote>月球不是终点，而是通往更远深空的中转站。</blockquote>
     #| <figure><img src="https://example.com/base.jpg" alt="月球基地全景"><figcaption>基地全景照片，摄于着陆后第三日。</figcaption></figure>
     #| <ul><li>生命保障系统已完成 72 小时连续测试</li><li>首批样品分析数据回传正常</li></ul>
-    #| <pre><code>temperature = -23.5 C
-    #| status = nominal</code></pre>
+    #| <pre><code>temperature = -23.5 C&#10;status = nominal</code></pre>
     #| </article>
     #| <footer class="footer">版权所有 每日科学 联系我们 关于我们 备案号</footer>
     #| <script>var fake = "<p>这段脚本里的伪标签不应进入正文</p>";</script>
@@ -67,8 +66,7 @@ pub fn cases() -> Array[(String, String)] {
     #| <main><article>
     #| <h1>extract(html)</h1>
     #| <p>The extract function parses an HTML document and returns a normalized Article. It is a pure function: the same input always yields the same output on every supported backend, byte for byte after JSON serialization.</p>
-    #| <pre><code>let article = extract(html)
-    #| println(article.title)</code></pre>
+    #| <pre><code>let article = extract(html)&#10;println(article.title)</code></pre>
     #| <h2>Parameters</h2>
     #| <p>html: a string containing the full document, or a fragment. Malformed input is tolerated and never raises; the parser degrades gracefully and returns an empty article when no content can be found.</p>
     #| <h2>Returns</h2>

@@ -260,3 +260,32 @@ test "extract block kinds" {
   assert_eq(@core.contains_sub(k, "code"), true)
   assert_eq(@core.contains_sub(k, "image"), true)
 }
+
+///|
+fn code_block_text(ex : Extracted) -> String {
+  let mut text = ""
+  for block in ex.blocks {
+    match block {
+      @core.Code(t) => text = t
+      _ => ()
+    }
+  }
+  text
+}
+
+///|
+test "code block keeps line breaks and indentation" {
+  let html = "<article><p>一段足够长的介绍文字，用于建立正文候选区域。</p>" +
+    "<pre><code>temperature = -23.5 C\n  status = nominal\n</code></pre></article>"
+  assert_eq(
+    code_block_text(extract_html(html)),
+    "temperature = -23.5 C\n  status = nominal",
+  )
+}
+
+///|
+test "code block treats br as newline and drops crlf" {
+  let html = "<article><p>一段足够长的介绍文字，用于建立正文候选区域。</p>" +
+    "<pre>a\r\nb<br>c</pre></article>"
+  assert_eq(code_block_text(extract_html(html)), "a\nb\nc")
+}

@@ -364,6 +364,79 @@ pub fn text_content(dom : Dom, idx : Int32) -> String {
 }
 
 ///|
+/// 收集代码块内的原始文本：保留换行与缩进，`<br>` 视作换行，
+/// 行内标签不插入空格。用于 `<pre>` / `<code>`。
+fn collect_raw_text(dom : Dom, idx : Int32, b : StringBuilder) -> Unit {
+  if idx < 0 || idx >= dom.nodes.length() {
+    return
+  }
+  let stack : Array[(Int32, Bool)] = [(idx, false)]
+  while stack.length() > 0 {
+    let (cur, visited) = stack[stack.length() - 1]
+    let _ = stack.pop()
+    if cur < 0 || cur >= dom.nodes.length() {
+      continue
+    }
+    let node = dom.nodes[cur]
+    match node.kind {
+      Text(t) =>
+        if !visited {
+          // 统一成 \n，避免宿主换行符差异进入输出。
+          for c in t {
+            if c != '\r' {
+              b.write_char(c)
+            }
+          }
+        }
+      Comment => ()
+      Element(name) =>
+        if @core.is_dropped_tag(name) {
+          ()
+        } else if visited {
+          if name == "br" || name == "p" || name == "div" || name == "li" {
+            b.write_char('\n')
+          }
+        } else {
+          stack.push((cur, true))
+          let mut k = node.children.length() - 1
+          while k >= 0 {
+            stack.push((node.children[k], false))
+            k -= 1
+          }
+        }
+    }
+  }
+}
+
+///|
+/// 去掉代码块首尾的空行与行尾空白，内部换行与缩进原样保留。
+fn trim_code_edges(s : String) -> String {
+  let cs = s.to_array()
+  let mut start = 0
+  let mut end = cs.length()
+  while start < end && cs[start] == '\n' {
+    start += 1
+  }
+  while end > start &&
+        (cs[end - 1] == '\n' || cs[end - 1] == ' ' || cs[end - 1] == '\t') {
+    end -= 1
+  }
+  let b = StringBuilder()
+  for i = start; i < end; i = i + 1 {
+    b.write_char(cs[i])
+  }
+  b.to_string()
+}
+
+///|
+/// 代码块文本：与 `text_content` 不同，不折叠空白，保留源码换行。
+pub fn code_content(dom : Dom, idx : Int32) -> String {
+  let b = StringBuilder()
+  collect_raw_text(dom, idx, b)
+  trim_code_edges(b.to_string())
+}
+
+///|
 fn collect_link_text(dom : Dom, idx : Int32, b : StringBuilder) -> Unit {
   if idx < 0 || idx >= dom.nodes.length() {
     return

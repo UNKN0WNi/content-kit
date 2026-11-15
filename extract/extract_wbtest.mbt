@@ -148,6 +148,16 @@ test "L2 json field order is hardcoded" {
 }
 
 ///|
+test "L2 code block keeps newlines in all views" {
+  let a = extract(
+    "<article><p>说明段落，足够长以成为有效的正文候选内容。</p><pre>a = 1\nb = 2</pre></article>",
+  )
+  assert_true(@core.contains_sub(a.text, "a = 1\nb = 2"))
+  assert_true(@core.contains_sub(a.markdown, "```\na = 1\nb = 2\n```"))
+  assert_true(@core.contains_sub(render_json(a), "a = 1\\nb = 2"))
+}
+
+///|
 test "L2 renderers from same blocks" {
   let blocks : Array[@core.Block] = [
     @core.Heading(2, "标题"),
